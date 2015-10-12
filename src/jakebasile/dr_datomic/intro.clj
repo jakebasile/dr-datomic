@@ -54,7 +54,7 @@
 ;
 ; Transactions are synchronous on the transactor, but async on the peer.
 
-(defn add-entity
+(defn add-person
   [pname]
   ;; With our attribute added, we can store our first entity!
   (let [ent {;; You can again use a map shorthand to write an entity. You use
@@ -71,7 +71,7 @@
     (d/transact conn [ent])))
 
 ; Just as before, transactions are asynchronous.
-; => (add-entity)
+; => (add-person)
 ; #object[datomic.promise.....]
 
 ; Storing things is cool, but it's much cooler to be able to find them!
