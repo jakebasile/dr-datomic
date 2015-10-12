@@ -2,5 +2,6 @@
   (:require [datomic.api :as d]
             [jakebasile.dr-datomic
              [intro :as intro]
-             [refs :as refs]]))
+             [refs :as refs]
+             [history :as history]]))
 
