@@ -49,7 +49,7 @@
     ;; to add it to the schema, you run it in a transaction.
     (d/transact conn [attr])))
 
-; => (add-basic-schema)
+; => (add-schema)
 ; #object[datomic.promise.....]
 ;
 ; Transactions are synchronous on the transactor, but async on the peer.
