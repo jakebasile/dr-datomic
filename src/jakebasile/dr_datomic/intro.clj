@@ -74,3 +74,60 @@
 ; => (add-entity)
 ; #object[datomic.promise.....]
 
+; Storing things is cool, but it's much cooler to be able to find them!
+
+(defn find-person-by-name
+  [pname]
+  ;; Let's do a simple query to find the person we just added.
+  (let [q {;; You can write queries as vectors or maps.
+           ;; To start, we add what we want to find. Symbols starting with ?
+           ;; are variables in the datalog expression. This clause means
+           ;; we want to find a single thing and that thing will be referred to
+           ;; by ?person.
+           ;;
+           ;; Not that you must escape some parts of this so that Clojure doesn't
+           ;; try to interpret them in this namespace.
+           :find '[?person .]
+           ;; Next you must say where you want to query. This is where we can add
+           ;; parameters such as ?name. $ is special and means "the database". If
+           ;; you aren't adding any parameters of your own you don't need to
+           ;; include the :in clause.
+           :in '[$ ?name]
+           ;; Lastly we write the rules for finding the thing(s) we want to find.
+           ;; These are evaluated from top to bottom and form a Datalog expression.
+           ;; You can even add new intermediate variables in here and call various
+           ;; functions that get run on the transactor. But for now, we just want
+           ;; to search for a person by name.
+           :where '[;; This single clause means find me an entity, called ?person,
+                    ;; that has an attribute called :user/name that has the value
+                    ;; of ?name. We declared ?name above as a parameter, so it'll
+                    ;; be passed in when we query.
+                    [?person :person/name ?name]]}
+        ;; To query we actually need to get the Database value, not just connect.
+        ;; This database object is locked to a point in time and will be consistent
+        ;; for its lifetime.
+        db (get-db)]
+    ;; The first argument to d/q is the query itself. All other arguments come
+    ;; afterward. Not that the DB is the first non-query arg to this function, and
+    ;; all subsequent args are referred to in the query by the names you declared
+    ;; for them in the :in clause above.
+    (d/q q db pname)))
+
+; => (find-person-by-name "Buck Turgidson")
+; 123456789
+;
+; Running the query we get back the ID of the entity that matches it. Next, we see
+; how to get useful data from that ID.
+
+
+(defn get-name-from-id
+  [id]
+  (let [;; If you have an id, you can get the entity it refers to easily.
+        ;; This is a map-like data structure that can get you anything stored on
+        ;; the entity in question at that point in time. It's lazy, and will only
+        ;; talk to the storage service if needed.
+        person (d/entity (get-db) id)
+        ;; Once you have an entity, you can just use it like a map.
+        pname (:person/name person)]
+    pname))
+
