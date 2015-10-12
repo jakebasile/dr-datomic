@@ -75,15 +75,22 @@
 
 (defn find-person
   [person-name]
+  ;; This is essentially the same as in the intro example, only now I roll in the extra step
+  ;; of creating an entity from the result ID.
   (let [q {:find '[?person .]
            :in '[$ ?name]
            :where '[[?person :person/name ?name]]}
+        ;; Note that this DB object is used in two places. You can do this to take advantage of caching,
+        ;; but be aware that the DB is fixed at a moment in time and will not update with new attributes.
         db (get-db)]
     (when-let [person-id (d/q q db person-name)]
       (d/entity db person-id))))
 
 (defn find-pet
   [pet-name]
+  ;; Pets are represented by just another entity instead of a direct attribute.
+  ;; You can query for them just like anything else. It is important to note that
+  ;; the entity itself is not a "pet", it is an entity that has a "pet/name" attribute.
   (let [q {:find '[?pet .]
            :in '[$ ?name]
            :where '[[?pet :pet/name ?name]]}
@@ -91,9 +98,70 @@
     (when-let [pet-id (d/q q db pet-name)]
       (d/entity db pet-id))))
 
-(defn find-owners
+(defn get-pets
+  [person]
+  ;; You access a reference from the originating entity as either a set of entities or a single entity.
+  (let [pets (:person/pets person)]
+    (map :pet/name pets)))
+
+; => (get-pets (find-person "Fred"))
+; ("Scrappy" "Scooby")
+
+(defn get-owners
   [pet]
+  ;; here we see the reverse reference notation again. All references in Datomic are bidirectional,
+  ;; so you don't need to do anything special to get them. A side effect of Datomic's flexibility
+  ;; is that an entity can be referred to by any number of other entities. In this case, a pet can have
+  ;; more than one owner so you will get back a collection of entities that have a :person/pets attribute
+  ;; containing this pet.
   (let [owners (:person/_pets pet)]
     (map :person/name owners)))
+
+; => (get-owners (find-pet "Scooby"))
+; ("Fred" "Shaggy")
+
+(defn getting-weird
+  [person1 person2]
+  ;; As I touched on, entities themselves do not have a type. They are simply a place to collect attributes.
+  ;; You assign your own meaning to that. In this case, I have assigned that an entity with :pet/name is a pet
+  ;; and an entity with person/name is a person and that a person can have many pets.
+  ;;
+  ;; but datomic doesn't enforce that :person/pets refers to what I consider a pet.
+  (let [p1 {:db/id (d/tempid :db.part/user)
+            :person/name person1}
+        p2 {:db/id (d/tempid :db.part/user)
+            :person/name person2}
+        rel [:db/add (:db/id p1) :person/pets (:db/id p2)]
+        conn (get-connection)]
+    (d/transact conn [p1 p2 rel])))
+
+; => (getting-weird "Edward" "Bella")
+; ...
+; => (map :pet/name (:person/pets (find-person "Edward")))
+; (nil)
+; => (map :person/name (:person/pets (find-person "Edward")))
+; ("Bella")
+
+(defn getting-weirder
+  [person-name pet-name]
+  ;; Another side effect of entities not having a concrete type and ident namespaces being just a convention
+  ;; is that there's nothing stopping you from mixing attributes from different conceptual things.
+  (let [petper {:db/id (d/tempid :db.part/user)
+                :person/name person-name
+                :pet/name pet-name}
+        conn (get-connection)]
+    (d/transact conn [petper])))
+
+; => (getting-weirder "Picard" "Riker")
+; ...
+; => (find-person "Picard")
+; {:db/id 123}
+; => (find-pet "Riker")
+; {:db/id 123}
+; => (= *1 *2)
+; true
+; ;; d/touch retrieves all attributes on the given entity.
+; => (d/touch (find-person "Picard"))
+; {:db/id 123 :person/name "Picard" :pet/name "Riker"}
 
 
