@@ -18,7 +18,7 @@
 ; => (create-local-db)
 ; true
 
-(defn add-basic-schema
+(defn add-schema
   []
   ;; Now we can add a basic attribute schema. You can use a Map shorthand to write
   ;; it out in a convenient way, but these are turned into a series of transactions
