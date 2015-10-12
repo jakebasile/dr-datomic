@@ -11,7 +11,7 @@
   []
   (d/connect "datomic:mem://intro"))
 
-(defn get-db!
+(defn get-db
   []
   (d/db (get-connection)))
 
@@ -53,4 +53,24 @@
 ; #object[datomic.promise.....]
 ;
 ; Transactions are synchronous on the transactor, but async on the peer.
+
+(defn add-entity
+  [pname]
+  ;; With our attribute added, we can store our first entity!
+  (let [ent {;; You can again use a map shorthand to write an entity. You use
+             ;; attribute idents as the keys, and values as ... values.
+             ;;
+             ;; as before, you always need an ID. This time, we'll store things
+             ;; in the user namespace. You shouldn't store anything in the db
+             ;; namespace aside from configuration.
+             :db/id (d/tempid :db.part/user)
+             :person/name pname}
+        ;; We'll need a connection, again.
+        conn (get-connection)]
+    ;; And now we add it in a transaction.
+    (d/transact conn [ent])))
+
+; Just as before, transactions are asynchronous.
+; => (add-entity)
+; #object[datomic.promise.....]
 
