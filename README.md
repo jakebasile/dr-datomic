@@ -3,7 +3,6 @@
 
 This is a working copy of the example code I will use while presenting my introduction to Datomic talk, Dr. Datomic.
 
-The [slides][] are available as well.
+~~The slides are available as well~~ *not anymore, sorry*
 
-[slides]: https://goo.gl/uymhf1
 
